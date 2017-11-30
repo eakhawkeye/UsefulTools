@@ -12,6 +12,7 @@
 #############
 myscript=$( basename "$0" )
 verbose=false
+quiet=false
 site="google.com"
 IPfile="$1"
 typeset iterations=20
@@ -29,6 +30,7 @@ function help_me() {
     echo -e "\t[--file    |-f]\t\"Nameservers File (line separated)\""
     echo -e "\t[--site    |-s]\t\"Site name to resolve\""
     echo -e "\t[--iter    |-i]\t\"Number of tests per nameserver\""
+    echo -e "\t[--quiet   |-q]\t\"Quiet the live output (for automation)\""
     echo -e "\t[--verbose |-v]\t\"Show verbose information\""
     echo -e "\n\tDefault Values: (if missing any parameter)"
     echo -e "\t  File:    /etc/resolv.conf"
@@ -60,11 +62,12 @@ function from_file() {
 }
 
 function dns_test() {
-    # Pass: array_of_nameservers, site, iteration amount, verbosity
+    # Pass: array_of_nameservers, site, iteration amount, verbosity, quiet
     declare -a ary_ns=${!1}
     local site=${2}
     local iter=${3}
     local verb=${4}
+    local quiet=${5}
     local vmax=10
     local i vi
     typeset -i i vi
@@ -73,7 +76,7 @@ function dns_test() {
     while [[ $i -lt ${iter} ]]; do
         ((i++))
         for IP in ${ary_ns[@]}; do
-            echo -en "Test: ${i}     \r"
+            if ! ${quiet}; then echo -en "Test: ${i}     \r"; fi
             time=`dig @$IP $site| awk '/Query time:/ {print " "$4}'`
             IPtrans=`echo $IP|tr \. _`
             eval `echo result$IPtrans=\"\\$result$IPtrans$time\"`
@@ -85,7 +88,7 @@ function dns_test() {
         for IP in ${ary_ns[@]}; do
             local IPtrans=`echo $IP|tr \. _`
             vi=1; printf "%-25s" ${IP}":";
-            for ms in $(echo -e `eval "echo \\$result$IPtrans"` | tr ' ' "\n"  ); do
+            for ms in $(echo -e `eval "echo \\$result$IPtrans"`); do
                 # Start a new line if the max width is reached
                 if [[ vi -gt ${vmax} ]]; then printf "\n%30s" ${ms}; vi=2; continue; fi
                 printf "%5s" ${ms}; ((vi++))
@@ -94,6 +97,7 @@ function dns_test() {
     fi
 
     # ServerFault - Determine status (min/max/avg) for each NS and display
+    printf "%-20s %5s %5s %5s %4s %5s\n" "Nameserver" "avg" "min" "max" "(ms)" "#resp"
     for IP in ${ary_ns[@]}; do
         local IPtrans=`echo $IP|tr \. _`
         printf "%-20s " $IP":"
@@ -108,12 +112,13 @@ function dns_test() {
                      }
                 END  { 
                         if (rec==0) {ave=0} else {ave=total/rec};
-                        printf "average %5i     min %5i     max %5i ms %2i responses\n", ave,minn,maxx,rec 
+                        printf "%5i %5i %5i %10i\n", ave,minn,maxx,rec 
                      }'
     done
 
     return 0
 }
+
 
 
 #########
@@ -126,6 +131,7 @@ while ! [ "${1}x" == "x" ] ; do
         "--file"|"-f") h_file=${2}; does_exist ${h_file}; ary_ns+=( $(from_file ${h_file}) ); shift;;
         "--site"|"-s" ) site=${2}; shift;;
         "--iter"|"-i" ) iterations=${2}; shift;;
+        "--quite"|"-q") quiet=true;;
         "--verbose"|"-v") verbose=true;;
         * ) help_me; exit 2;;
     esac
@@ -136,6 +142,6 @@ done
 if [[ ${#ary_ns[@]} -eq 0 ]]; then ary_ns+=( $(from_resolv) ); fi
 
 # Run the tests
-dns_test ary_ns[@] ${site} ${iterations} ${verbose}
+dns_test ary_ns[@] ${site} ${iterations} ${verbose} ${quiet}
 
 exit $?
