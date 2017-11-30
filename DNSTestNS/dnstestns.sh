@@ -97,10 +97,10 @@ function dns_test() {
     fi
 
     # ServerFault - Determine status (min/max/avg) for each NS and display
-    printf "%-20s %5s %5s %5s %4s %5s\n" "Nameserver" "avg" "min" "max" "(ms)" "#resp"
+    printf "%-20s %5s %5s %5s %4s %6s\n" "_Nameserver" "_avg" "_min" "_max" "(ms)" "_#resp"
     for IP in ${ary_ns[@]}; do
         local IPtrans=`echo $IP|tr \. _`
-        printf "%-20s " $IP":"
+        printf "%-20s " $IP
         echo -e `eval "echo \\$result$IPtrans"`\
          | tr ' ' "\n" \
          | awk '/.+/ {  
@@ -112,7 +112,7 @@ function dns_test() {
                      }
                 END  { 
                         if (rec==0) {ave=0} else {ave=total/rec};
-                        printf "%5i %5i %5i %10i\n", ave,minn,maxx,rec 
+                        printf "%5i %5i %5i %11i\n", ave,minn,maxx,rec 
                      }'
     done
 
