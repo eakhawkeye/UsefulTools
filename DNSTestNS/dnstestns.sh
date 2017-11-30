@@ -87,20 +87,20 @@ function dns_test() {
     if ${verb}; then
         for IP in ${ary_ns[@]}; do
             local IPtrans=`echo $IP|tr \. _`
-            vi=1; printf "%-25s" ${IP}":";
+            vi=1; printf "%-25s" ${IP};
             for ms in $(echo -e `eval "echo \\$result$IPtrans"`); do
                 # Start a new line if the max width is reached
                 if [[ vi -gt ${vmax} ]]; then printf "\n%30s" ${ms}; vi=2; continue; fi
                 printf "%5s" ${ms}; ((vi++))
             done; echo; echo
-        done; echo
+        done
     fi
 
     # ServerFault - Determine status (min/max/avg) for each NS and display
-    printf "%-20s %5s %5s %5s %4s %6s\n" "_Nameserver" "_avg" "_min" "_max" "(ms)" "_#resp"
+    printf "%-24s %5s %5s %5s %4s %6s\n" "_nameserver" "_avg" "_min" "_max" "(ms)" "_#resp"
     for IP in ${ary_ns[@]}; do
         local IPtrans=`echo $IP|tr \. _`
-        printf "%-20s " $IP
+        printf "%-24s " $IP
         echo -e `eval "echo \\$result$IPtrans"`\
          | tr ' ' "\n" \
          | awk '/.+/ {  
