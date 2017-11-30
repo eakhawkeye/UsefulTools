@@ -62,5 +62,6 @@ _nameserver               _avg  _min  _max (ms) _#resp
 
 Credits
 ------------
-Original Script: https://serverfault.com/questions/91063/how-do-i-benchmark-performance-of-external-dns-lookups
-Why use PeZa's work instead of writing something this simple use other methods? His work is awesome! I found his storage method interesting and I dig his awk output. Always good to learn something new.
+Original Script: https://serverfault.com/questions/91063/how-do-i-benchmark-performance-of-external-dns-lookups. 
+
+Why use PeZa's work instead of writing something this simple by writing my own method? His work is awesome! I found his storage method interesting and I dig his awk comparisons. Always good to learn something new.
