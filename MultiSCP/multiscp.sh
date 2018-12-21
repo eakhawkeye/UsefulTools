@@ -94,7 +94,7 @@ done
 
 # Make sure the hostlist exists
 if ! [ -e ${host_file} ]; then echo "  Missing ${host_file}"; exit 3; fi
-if ! [ -e ${data_file} ]; then echo "  Missing ${host_file}"; exit 3; fi
+if ! [ -e ${data_file} ]; then echo "  Missing ${data_file}"; exit 3; fi
 
 # Process the hostlist
 echo "  Transferring '${data_file}' to hosts in ${host_file}"
