@@ -35,7 +35,7 @@ function transfer_files()
     for my_host in $(cat ${host_list} | grep -v ^# | cut -d' ' -f1); do 
 
         # Copy the files and add the PID to the array
-        scp ${scp_options} -o ConnectTimeout=${timeout_conn} -q ${my_file} ${my_host}:. &
+        scp ${scp_options} -o StrictHostKeyChecking=no -o ConnectTimeout=${timeout_conn} -q ${my_file} ${my_host}:. &
         ary_process+=( $! )
         ((count++))
 
