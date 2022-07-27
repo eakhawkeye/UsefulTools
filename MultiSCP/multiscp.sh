@@ -4,8 +4,6 @@
 #
 # MultiSCP - use to send files in parallel to multiple systems.
 
-
-
 #############
 # Variables #
 #############
@@ -13,8 +11,6 @@ max_conn=100
 timeout_conn=10
 data_file=
 host_file=
-
-
 
 #############
 # Functions #
@@ -27,31 +23,43 @@ function transfer_files()
     local max_connections=${3}
     local timeout_conn=${4}
     local scp_options=${5}
-    local count=0
-    local ary_process=()
-    local max_hosts=$(cat ${host_list} | wc -l)
+    local processes=()
+    host_count=$(/usr/bin/cat ${host_list} \
+               | /usr/bin/grep -v "^#" \
+               | /usr/bin/wc -l)
 
     # Iterate through all the hostnames in the file
-    for my_host in $(cat ${host_list} | grep -v ^# | cut -d' ' -f1); do 
+    for my_host in $(/usr/bin/cat ${host_list} 
+                   | /usr/bin/grep -v "^#" \
+                   | /usr/bin/cut -d' ' -f1); do 
 
-        # Copy the files and add the PID to the array
-        scp ${scp_options} -o StrictHostKeyChecking=no -o ConnectTimeout=${timeout_conn} -q ${my_file} ${my_host}:. &
-        ary_process+=( $! )
-        ((count++))
+        # Copy the files and add the queue the PID
+        /usr/bin/scp ${scp_options} \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=${timeout_conn} \
+            -q ${my_file} ${my_host}:. &
+        processes+=( $! )
 
-        # Wait on the processes (pids) to complete then do next batch
-        if [[ ${#ary_process[@]} -ge ${max_connections} || ${count} -ge ${max_hosts} ]]; then
-            for my_pid in ${ary_process[@]}; do
-                echo -en "    Waiting on copies: ${count} left    \r"
-                wait ${my_pid};
-                ((count--))
-            done
-            unset ary_process
-            count=0
-            echo "    Waiting on copies: complete     "
-        fi
+        # When queue is full, wait for a spot to open
+        while [ ${#processes[@]} -ge ${max_connections} ]; do
+            echo -en "    Remaining copies: ${host_count}    \r"
+            /usr/bin/wait ${processes[0]};
+            unset processes[0]
+            processes=( ${processes[@]} )
+            ((host_count--))
+        done
 
     done
+
+    # Wait for remaining jobs to complete
+    while [ ${#processes[@]} -gt 0 ]; do
+        echo -en "    Remaining copies: ${host_count}    \r"
+        /usr/bin/wait ${processes[0]};
+        unset processes[0]
+        processes=( ${processes[@]} )
+        ((host_count--))
+    done
+    echo
 
     return 0
 }
@@ -67,11 +75,8 @@ function usage()
     echo -e "\t        -m         max concurrent connections | -m 100"
     echo -e "\t        -t         connetion timeout (in sec) | -t 10"
     echo -e "\t        -o         ssh/scp options            | -o \"-P 44321 -o StrictHostKeyChecking=no\"\n"
-
     exit 2
 }
-
-
 
 #########
 # Logic #
